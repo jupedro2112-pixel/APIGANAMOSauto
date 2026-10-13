@@ -7241,6 +7241,15 @@ app.get('/api/config/cbu', authMiddleware, async (req, res) => {
 
 app.post('/api/cbu/request', authMiddleware, async (req, res) => {
   try {
+    // #350 (owner 2026-10-13): el widget abre DIRECTO en Depositar al entrar al
+    // casino. Ese primer pedido es automático (el cliente no tocó nada) → solo
+    // devuelve los datos: sin "Solicito CBU" en el chat, sin InitiateCheckout y
+    // sin consumir el rate limit (si toca Depositar enseguida no rebota en 429).
+    if (req.body && req.body.auto === true) {
+      const c = await getConfig('cbu');
+      if (!c) return res.status(404).json({ error: 'CBU no configurado' });
+      return res.json({ success: true, auto: true, cbu: { number: c.number, alias: c.alias, bank: c.bank, titular: c.titular } });
+    }
     // Rate limiting por usuario: máximo 1 solicitud de CBU cada 10 segundos
     if (!checkCbuRateLimit(req.user.userId)) {
       return res.status(429).json({

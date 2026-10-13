@@ -4,7 +4,33 @@
 > commit por commit está en `git log --oneline`. Esto captura decisiones, umbrales de
 > negocio y pendientes que NO se ven leyendo el código.
 >
-> **Última actualización: 2026-10-09**
+> **Última actualización: 2026-10-13**
+
+## Sesión 2026-10-13
+
+### 350. El widget del casino abre DIRECTO en "Depositar" (CBU a la vista) al entrar
+- **Pedido del owner:** "apenas entren a la página, que entre con el botón de depositar
+  abierto, para que ya vean el CBU de arranque". El panel del asistente ya se abría solo al
+  entrar al casino (owner 2026-08-21), pero en el saludo ("Asistente").
+- **Front (`public/js/ui.js`, `openCasinoChat`):** en la primera apertura, en vez de
+  `casinoBotGo('home')` va a `casinoBotGo('deposit')` con la marca `_botAutoDeposit`.
+  Excepción: si el cliente eligió **carga con un agente** (`depositMode === 'manual'`) sigue
+  abriendo en el saludo — el modo manual monta el chat vivo y avisa al panel
+  (`/api/deposit/manual-start`), y eso no tiene que dispararse solo. Sin modo elegido
+  aparece la elección de las dos formas (#295) y al elegir automática, el CBU.
+- **Pedido "silencioso" del CBU:** `POST /api/cbu/request` con `{ auto: true }` devuelve
+  los datos y NADA más: sin el mensaje "💳 Solicito los datos para transferir (CBU)" en el
+  chat (no ensucia la bandeja del panel en cada ingreso), sin Meta CAPI `InitiateCheckout`
+  (no inflar el evento con aperturas automáticas) y sin consumir el rate limit de 10 s. El
+  front recuerda que lo cacheado vino del pedido silencioso (`_botCbuSilent`): el primer
+  toque REAL en Depositar lo pide como siempre (mensaje + CAPI), una sola vez. Si ese pedido
+  falla (ej. 429) y ya hay datos, se muestran igual en vez del cartel de error.
+- "↩ Volver" desde la tarjeta sigue llevando al saludo (datos de ingreso, referidos).
+- `index.html` → `ui.js?v=350`; SW del cliente **v201**. **Back necesita redeploy** (por el
+  `auto:true`; sin deploy del back el front igual funciona pero cada ingreso dejaría el
+  mensaje "Solicito CBU" en el chat).
+- PROBAR: entrar con un usuario en modo automático → el widget abre ya con CBU/alias/titular;
+  en el panel ese chat NO recibe "Solicito CBU" hasta que el cliente toque Depositar.
 
 ## Sesión 2026-10-09
 

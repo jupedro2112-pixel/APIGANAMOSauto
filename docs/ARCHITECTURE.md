@@ -5,7 +5,8 @@
 > verdad y este doc puede quedar viejo. Si encontrás algo desactualizado acá, corregilo
 > (regla permanente en CLAUDE.md: este doc se actualiza junto con WORKLOG.md).
 >
-> Última actualización: **2026-10-08** — webhooks salientes a publicistas (#334: §2
+> Última actualización: **2026-10-13** — widget abre directo en Depositar + pedido
+> silencioso del CBU (#350, §5 dos formas de cargar). Antes (2026-10-08): webhooks salientes a publicistas (#334: §2
 > OutboundWebhookQueue, §5 flujo, §6 card, §9 cron). Antes (2026-10-07): GH Wallet, banco con
 > API paralelo a hgcash (#332: §2 BankMovement, §5 flujo, §9). Antes: cashback instantáneo retirado (#329, §5).
 > Antes ese mismo día: reenvío de webhooks hgcash desde el panel (#326, §5).
@@ -726,6 +727,12 @@ VIPCARGAS con su JWT, y el cliente nunca más necesita conocer su clave del casi
   2 hs, nota adminOnly al panel). `POST /api/user/deposit-mode` guarda la elección;
   `/api/rewards/summary.depositMode` la sincroniza entre dispositivos (localStorage
   `vip_deposit_mode`). Panel: etiqueta 💬 CARGA MANUAL / ⚡ AUTO junto al nombre del chat.
+  **Apertura directa en Depositar (#350):** el widget se abre solo al entrar al casino y,
+  desde #350, arranca en la pestaña Depositar (`openCasinoChat` → `casinoBotGo('deposit')`
+  con `_botAutoDeposit`); con modo `manual` arranca en el saludo (no auto-dispara
+  `manual-start`). Ese primer pedido va como `POST /api/cbu/request {auto:true}`: solo
+  devuelve los datos (sin mensaje "Solicito CBU", sin `InitiateCheckout`, sin rate limit);
+  el primer toque real en Depositar vuelve a pedirlo normal (`_botCbuSilent`).
 - **Bonos aplicados dentro de una carga (#303):** % de ruleta diaria/bienvenida, bono
   1ª carga y lote dejan además una Transaction `bonus` propia
   (`_recordAppliedBonusTx`, `metadata.appliedOnDeposit:true` → la base del cashback

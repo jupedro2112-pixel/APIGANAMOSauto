@@ -2118,7 +2118,11 @@ VIP.ui.openCasinoChat = function() {
   // se respeta; si no, se muestra el estado del bot tal como quedó.
   if (!VIP.ui._casinoChatPh && !VIP.ui._botStarted) {
     VIP.ui._botStarted = true;
-    VIP.ui.casinoBotGo('home');
+    // #350 (owner 2026-10-13): arranca DIRECTO en Depositar, con el CBU a la
+    // vista (el saludo queda en "Asistente"). Si eligió carga con agente, no:
+    // eso monta el chat vivo y avisa al panel — mejor que lo toque él.
+    if (VIP.ui._depositMode() === 'manual') VIP.ui.casinoBotGo('home');
+    else { VIP.ui._botAutoDeposit = true; VIP.ui.casinoBotGo('deposit'); }
   }
 };
 
@@ -2573,6 +2577,11 @@ VIP.ui.casinoBotGo = function(state) {
   }
 
   if (state === 'deposit') {
+    // #350: apertura automática (nadie tocó Depositar) → el pedido del CBU es
+    // "silencioso": sin "Solicito CBU" en el chat ni InitiateCheckout. El
+    // primer toque REAL en Depositar vuelve a pedirlo como siempre.
+    const silent = VIP.ui._botAutoDeposit === true;
+    VIP.ui._botAutoDeposit = false;
     // #295: según el modo elegido. Sin elegir → pantalla de elección.
     const mode = VIP.ui._depositMode();
     if (!mode) { VIP.ui.casinoBotGo('deposit-mode'); return; }
@@ -2658,18 +2667,23 @@ VIP.ui.casinoBotGo = function(state) {
     };
     // Cache client-side: el endpoint tiene rate limit de 10s por usuario — un
     // ida-y-vuelta rápido por el bot no debe rebotar en 429.
-    if (VIP.ui._botCbu && VIP.ui._botCbu.number) { renderCard(); return; }
+    // (#350: si lo cacheado vino del pedido silencioso, el primer toque real
+    // en Depositar lo pide de nuevo "en serio" — una sola vez.)
+    if (VIP.ui._botCbu && VIP.ui._botCbu.number && (silent || !VIP.ui._botCbuSilent)) { renderCard(); return; }
     fetch(`${VIP.config.API_URL}/api/cbu/request`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${VIP.state.currentToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
+      body: JSON.stringify(silent ? { auto: true } : {})
     })
       .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error('http ' + r.status)); })
       .then(function(data) {
         VIP.ui._botCbu = (data && data.cbu) || {};
+        VIP.ui._botCbuSilent = silent;
         renderCard();
       })
       .catch(function() {
+        // Ya tenemos los datos de antes (ej. 429 por tocar enseguida) → se muestran igual.
+        if (VIP.ui._botCbu && VIP.ui._botCbu.number) { renderCard(); return; }
         // La automatización falló → fallback al chat humano (regla del owner).
         if (card) card.innerHTML = '⚠️ No pudimos traer los datos en este momento. Escribile a soporte y te los pasa al toque.';
         VIP.ui._botRow(VIP.ui._botBtn('🎧 Hablar con soporte', 'VIP.ui.casinoBotSupport()', true));
