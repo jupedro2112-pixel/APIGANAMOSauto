@@ -2378,12 +2378,16 @@ VIP.ui._copyCred = function(txt) {
 // acredita sola igual). El cliente elige la primera vez, y puede cambiar de
 // una a otra cuando quiera (link en la tarjeta de carga / barra del chat /
 // chip del inicio). Se recuerda en localStorage + en el User (depositMode).
+// Desde #350b arranca en 'auto' sin preguntar; la elección aparece al cambiar.
 // ============================================================
 VIP.ui._depositMode = function() {
   let m = null;
   try { m = localStorage.getItem('vip_deposit_mode'); } catch (e) {}
   if (m !== 'auto' && m !== 'manual') m = (VIP.ui._rwSummary && VIP.ui._rwSummary.depositMode) || null;
-  return (m === 'auto' || m === 'manual') ? m : null;
+  // #350b (owner 2026-10-13): sin elegir = AUTOMÁTICA por default (antes se
+  // preguntaba al primer Depositar). Pasar a "con un agente" sigue a 1 toque:
+  // link en la tarjeta del CBU / chip del inicio / segundo toque en Depositar.
+  return m === 'manual' ? 'manual' : 'auto';
 };
 VIP.ui.setDepositMode = function(mode, thenGo) {
   if (mode !== 'auto' && mode !== 'manual') return;

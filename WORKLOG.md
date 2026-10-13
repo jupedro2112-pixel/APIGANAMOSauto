@@ -31,6 +31,13 @@
   mensaje "Solicito CBU" en el chat).
 - PROBAR: entrar con un usuario en modo automático → el widget abre ya con CBU/alias/titular;
   en el panel ese chat NO recibe "Solicito CBU" hasta que el cliente toque Depositar.
+- **#350b — AUTOMÁTICA por default.** Owner: "que aparezca automática como default, y
+  después si quiere tiene la opción de cambiar a manual". `_depositMode()` devuelve `'auto'`
+  cuando el cliente nunca eligió (antes `null` → pantalla de elección al primer Depositar).
+  Así TODOS entran viendo el CBU directo; la elección (#295) queda para cambiar: link
+  "💬 Prefiero cargar con un agente" en la tarjeta del CBU, chip "MODO DE CARGA · Cambiar" del
+  inicio, o segundo toque en Depositar. `User.depositMode` sigue `null` hasta que elija
+  (el panel muestra ⚡ AUTO solo si lo eligió explícitamente). `ui.js?v=350b`, SW v202.
 
 ## Sesión 2026-10-09
 

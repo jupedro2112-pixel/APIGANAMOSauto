@@ -720,8 +720,9 @@ VIPCARGAS con su JWT, y el cliente nunca más necesita conocer su clave del casi
   `volvio-por-pauta`); "la nueva" → `POST /api/auth/account-replaced` bloquea la vieja
   (`replacedBy*`, tag `reemplazada`) y marca la nueva (`replacesUserId`, tag `reemplazo`).
   Listado: `GET /api/admin/campaign-returns` → panel "🔁 Volvieron por pauta".
-- **Dos formas de cargar (#295).** `User.depositMode` `'auto'|'manual'|null`. El widget
-  pregunta al primer "Depositar" (`casinoBotGo('deposit-mode')`); `auto` = tarjeta CBU +
+- **Dos formas de cargar (#295).** `User.depositMode` `'auto'|'manual'|null`. Desde #350b
+  `null` = **automática** (`_depositMode()` nunca devuelve null; la pantalla de elección
+  `casinoBotGo('deposit-mode')` aparece solo al cambiar); `auto` = tarjeta CBU +
   comprobante (pipeline IA/hgcash); `manual` = `casinoBotManualDeposit()` monta el chat
   real y llama `POST /api/deposit/manual-start` (mensaje `/sys_carga_manual`, throttle
   2 hs, nota adminOnly al panel). `POST /api/user/deposit-mode` guarda la elección;
