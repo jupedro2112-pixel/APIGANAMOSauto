@@ -770,9 +770,13 @@ VIPCARGAS con su JWT, y el cliente nunca más necesita conocer su clave del casi
   memoria al arrancar y cada 60 s (`_loadHgcashCredentials` → `hgcashPay.setTokenOverride`).
   Prioridad panel > SSM (`HGCASH_API_TOKEN`/`HGCASH_WEBHOOK_SECRET` quedan de respaldo). El
   token se prueba con `GET /accounts` antes de guardar; al cambiarlo se limpia el
-  `accountId` cacheado. El webhook acepta la firma con el secreto del panel O el de SSM
+  `accountId` cacheado. El webhook acepta SOLO el secreto del panel si hay uno (#351; si no, el de SSM)
   (cambio de cuenta sin perder avisos). ⚠️ Si cambia JWT_SECRET lo del panel no se descifra
   → cae a SSM y el panel lo avisa.
+- **Webhook hgcash — secreto exclusivo (#351, 2026-10-13):** si hay secreto cargado en el panel,
+  `_hgcashWebhookSecrets()` devuelve SOLO ese: el `HGCASH_WEBHOOK_SECRET` de SSM deja de valer y
+  los avisos de la cuenta hgcash vieja se rechazan. Sin secreto en el panel vale el de SSM. ⚠️ Si
+  las dos cuentas comparten usuario/secreto de hgcash esto no alcanza (no hay filtro por CBU destino).
 - **GH Wallet (#332, banco PARALELO):** `POST /api/ghwallet/webhook` (HMAC-SHA256 de
   `{ts}.{body crudo}`, headers `X-Wallet-Signature/Timestamp`, ventana 5 min, fail-closed sin
   secreto) traduce `payment.paid` (held) / `payment.verified` (done) / `payment.reversed` a

@@ -8,6 +8,15 @@
 
 ## Sesión 2026-10-13
 
+### 351. Webhook hgcash: con secreto en el panel, el de AWS (SSM) deja de valer (réplica PAUTANUEVAsantino #323)
+- Owner: tras cambiar token + secreto a una cuenta hgcash nueva seguían entrando (y auto-cargándose)
+  movimientos de la cuenta VIEJA: la firma se aceptaba con el secreto del panel O el de SSM.
+- `_hgcashWebhookSecrets()`: si hay secreto en el panel → SOLO ese; sin secreto en el panel → el de
+  SSM. Recuadro 🔐 del panel: "el de AWS ya NO se acepta". admin-sw bump.
+- ⚠️ No cubre dos cuentas bajo el MISMO usuario/secreto de hgcash (falta filtro por CBU destino).
+  Recomendado además: borrar la URL del webhook en el dashboard de la cuenta vieja.
+- `node --check` (server.js, admin.js, admin-sw.js). **Back necesita redeploy.**
+
 ### 350. El widget del casino abre DIRECTO en "Depositar" (CBU a la vista) al entrar
 - **Pedido del owner:** "apenas entren a la página, que entre con el botón de depositar
   abierto, para que ya vean el CBU de arranque". El panel del asistente ya se abría solo al
