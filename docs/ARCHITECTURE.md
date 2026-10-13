@@ -997,7 +997,8 @@ VIPCARGAS con su JWT, y el cliente nunca más necesita conocer su clave del casi
 - **Barra de escribir estilo WhatsApp** (réplica de foto del owner): íconos SVG de
   trazo fino sin fondo (`.wa-icon-btn`) — tarjeta = CBU, cámara = foto — + send
   verde. El fueguito NO va ahí: vive en la cabecera del chat (`.fire-topbar-btn`
-  en `.chat-topbar`, ids fireBtn/fireStreak intactos). Modo oscuro vía `body.wa-dark`.
+  en `.chat-topbar`, ids fireBtn/fireStreak intactos). Modo oscuro vía `body.wa-dark`
+  (default CLARO desde #350c: el inline del `<body>` solo lo agrega con `localStorage.waDark === '1'`).
 - **FCM**: todo el manejo real (getToken 3 tiers, refresh, register-token) está en el
   INLINE de index.html; `window.sendFcmTokenAfterLogin` del inline pisa a propósito la
   de notifications.js. Firebase config duplicada en index.html Y en el SW (cambiar

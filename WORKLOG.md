@@ -38,6 +38,11 @@
   "💬 Prefiero cargar con un agente" en la tarjeta del CBU, chip "MODO DE CARGA · Cambiar" del
   inicio, o segundo toque en Depositar. `User.depositMode` sigue `null` hasta que elija
   (el panel muestra ⚡ AUTO solo si lo eligió explícitamente). `ui.js?v=350b`, SW v202.
+- **#350c — modo CLARO por default.** Owner: "que aparezca modo claro como default". El
+  inline del `<body>` en `index.html` solo agrega `wa-dark` si `localStorage.waDark === '1'`
+  (antes: oscuro salvo `'0'` explícito, owner 2026-08-03). Quien había elegido oscuro con el
+  🌙 lo conserva; quien nunca tocó nada pasa a claro. Afecta al widget del casino y al chat
+  de soporte (misma clase). SW v203.
 
 ## Sesión 2026-10-09
 

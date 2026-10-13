@@ -507,7 +507,7 @@ function setupEventListeners() {
         // Se guarda en localStorage (por dispositivo, no por cuenta): es comodidad
         // visual y cada aparato puede tener su preferencia. Se aplica al <body>
         // porque el CSS del modo oscuro cuelga de `body.wa-dark`.
-        // DEFAULT: OSCURO (lo aplica el inline del <body> antes del primer paint).
+        // DEFAULT: CLARO desde #350c (lo aplica el inline del <body> antes del primer paint).
         // Hay DOS controles sincronizados: el botón 🌙/☀️ de la cabecera del chat
         // (a la vista — en Configuración nadie lo encontraba) y el switch del
         // modal de Configuración. Los dos pasan por applyWaDark.

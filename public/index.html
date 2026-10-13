@@ -395,9 +395,9 @@
     // Modo oscuro del chat: se aplica ANTES de que se pinte nada, si no el usuario
     // ve un flash del chat en claro y recién después se pone oscuro. Por eso va
     // acá inline y no en app.js (que carga al final).
-    // DEFAULT = OSCURO (owner 2026-08-03): solo queda claro si el usuario eligió
-    // claro explícitamente (waDark === '0').
-    try { if (localStorage.getItem('waDark') !== '0') document.body.classList.add('wa-dark'); } catch (e) { document.body.classList.add('wa-dark'); }
+    // DEFAULT = CLARO (owner 2026-10-13, #350c; antes oscuro desde 2026-08-03):
+    // solo queda oscuro si el usuario lo eligió explícitamente (waDark === '1').
+    try { if (localStorage.getItem('waDark') === '1') document.body.classList.add('wa-dark'); } catch (e) {}
 
     // ============================================================
     // AVISOS DE FORMULARIO EN ESPAÑOL (owner 2026-08-04)
