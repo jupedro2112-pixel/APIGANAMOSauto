@@ -19292,6 +19292,28 @@ app.post('/api/admin/users/:userId/access-link', authMiddleware, adminMiddleware
 // cliente y, si elige seguir con la vieja, llama acá: la cuenta nueva (de la
 // landing, sin cargas, < 48 h) queda INACTIVA y apuntando a la vieja; el link se
 // consume sin loguear; nota en el chat de la cuenta vieja para el agente.
+// #352: link de acceso PROPIO (iPhone dentro de Instagram/Facebook). El cliente ya
+// está logueado adentro del webview de IG; la PWA pide este link y lo deja en la
+// barra de direcciones para que "⋯ → Abrir en navegador externo" abra Safari YA
+// logueado (en vez de la landing, que le crearía otra cuenta). Mismo mecanismo
+// que el link del agente (single use, `issueAccessLinkFor`); `mio=1` le dice a la
+// PWA que si lo recarga el MISMO webview con sesión viva, lo ignore sin preguntar.
+// Solo rol user, 1 por minuto por usuario (pisa el anterior: siempre vale el último).
+const _selfAccessLinkAt = new Map();
+app.post('/api/auth/access-link/self', authLimiter, authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'user') return res.status(403).json({ error: 'Solo para clientes.' });
+    const last = _selfAccessLinkAt.get(req.user.userId) || 0;
+    if (Date.now() - last < 60 * 1000) return res.status(429).json({ error: 'Esperá un minuto.' });
+    _selfAccessLinkAt.set(req.user.userId, Date.now());
+    if (_selfAccessLinkAt.size > 5000) _selfAccessLinkAt.clear();
+    const url = (await issueAccessLinkFor(req.user.userId)) + '&mio=1';
+    res.json({ success: true, url });
+  } catch (e) {
+    logger.warn(`[access-link/self] ${e.message}`);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
 app.post('/api/auth/access-link/discard', authLimiter, authMiddleware, async (req, res) => {
   try {
     const token = String((req.body && req.body.token) || '').trim();

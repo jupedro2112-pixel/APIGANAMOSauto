@@ -1835,6 +1835,8 @@ VIP.ui._showCasinoFrame = function() {
   // Bloquea el scroll del fondo mientras el casino está abierto.
   document.body.style.overflow = 'hidden';
   VIP.ui._casinoOpen = true;
+  // #352: iPhone dentro de Instagram/Facebook → aviso para abrir en Safari ya logueado.
+  try { VIP.ui._iosInAppNudge(); } catch (e) {}
   // Hub de premios (#254): traer el resumen (bienvenida/diaria/cashback) y
   // prender el botón + puntito. Fire-and-forget.
   try { VIP.ui._refreshRewards(); } catch (e) {}
@@ -4258,6 +4260,51 @@ VIP.ui.casinoRouletteSpin = function() {
       if (btn) { btn.disabled = false; btn.textContent = '🎡 GIRAR'; }
       VIP.ui.showToast('Error de conexión. Probá de nuevo.', 'error');
     });
+};
+
+/** #352 (pedido PulWin 2026-10-14): en iPhone NO hay salto programático a Safari
+ *  desde el navegador de Instagram/Facebook (el intent:// es de Android y
+ *  x-safari- está bloqueado). Lo único que anda es el menú ⋯ de la app → "Abrir
+ *  en navegador externo", que abre en Safari LA URL ACTUAL. Entonces, ya logueado
+ *  adentro del webview: se pide un link de acceso propio (single use) y se deja en
+ *  la barra de direcciones → al tocar ⋯ Safari abre la PWA logueada (no la landing,
+ *  que le crearía otra cuenta). Banner chico arriba del casino, se cierra con ✕,
+ *  una vez por sesión del navegador. */
+VIP.ui._iosInAppNudge = function() {
+  if (VIP.ui._iosNudged) return;
+  const ua = navigator.userAgent || '';
+  if (!/iPhone|iPad|iPod/i.test(ua) || !/Instagram|FBAN|FBAV|FB_IAB|FBAG|TikTok|musical_ly|Bytedance/i.test(ua)) return;
+  if (!VIP.state.currentToken) return;
+  VIP.ui._iosNudged = true;
+  try { if (sessionStorage.getItem('iosNudgeDone') === '1') return; } catch (e) {}
+  fetch(`${VIP.config.API_URL}/api/auth/access-link/self`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${VIP.state.currentToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({})
+  }).then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
+    if (!d || !d.url) return;
+    // La URL actual pasa a ser el link de acceso: es lo que el menú ⋯ abre en Safari.
+    try { history.replaceState(null, '', d.url); } catch (e) { return; }
+    const app = /TikTok|musical_ly|Bytedance/i.test(ua) ? 'TikTok' : (/Instagram/i.test(ua) ? 'Instagram' : 'Facebook');
+    const b = document.createElement('div');
+    b.id = 'iosInAppNudge';
+    b.style.cssText = 'position:fixed;top:calc(8px + env(safe-area-inset-top,0px));left:10px;right:10px;z-index:2147483100;' +
+      'background:linear-gradient(135deg,#0f2a1a,#0b1a12);border:1.5px solid #26e07f;border-radius:14px;padding:11px 40px 11px 14px;' +
+      'color:#fff;font-size:13px;line-height:1.4;box-shadow:0 8px 28px rgba(0,0,0,.55);font-family:inherit;';
+    b.innerHTML = '<b style="color:#26e07f;">📲 Guardá tu cuenta en el celular</b><br>' +
+      'Estás dentro de ' + app + '. Tocá los <b>⋯</b> arriba a la derecha → <b>“Abrir en navegador externo”</b>. ' +
+      'Safari abre con tu cuenta ya ingresada.' +
+      '<button type="button" id="iosNudgeX" style="position:absolute;top:6px;right:8px;background:none;border:none;color:#9fb3a8;font-size:20px;cursor:pointer;line-height:1;">✕</button>' +
+      '<div style="position:absolute;top:-6px;right:44px;font-size:22px;animation:iosNudgeB 1s ease-in-out infinite;">👆</div>';
+    const st = document.createElement('style');
+    st.textContent = '@keyframes iosNudgeB{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}';
+    b.appendChild(st);
+    document.body.appendChild(b);
+    b.querySelector('#iosNudgeX').onclick = function() {
+      try { b.remove(); } catch (e) {}
+      try { sessionStorage.setItem('iosNudgeDone', '1'); } catch (e) {}
+    };
+  }).catch(function() {});
 };
 
 /** Toggle claro/oscuro del widget = el MISMO modo del chat de soporte

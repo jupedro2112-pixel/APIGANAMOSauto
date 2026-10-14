@@ -642,6 +642,16 @@ VIP.auth = (function () {
         let token = null;
         try { token = new URLSearchParams(window.location.search).get('acceso'); } catch (e) {}
         if (!token) return false;
+        // #352: link de acceso PROPIO (`mio=1`, lo deja la PWA en la URL dentro
+        // del webview de IG en iPhone para que "Abrir en Safari" entre logueado).
+        // Si lo recarga el MISMO webview y ya hay sesión, no es una entrada nueva:
+        // se ignora sin el cartel de "ya tenés una cuenta" (es la misma cuenta).
+        try {
+            if (new URLSearchParams(window.location.search).get('mio') === '1' && localStorage.getItem('userToken')) {
+                history.replaceState(null, '', window.location.pathname);
+                return false;
+            }
+        } catch (e) {}
 
         // Modos de la landing — se leen ANTES de limpiar la URL:
         //   `ir=casino` (legacy): abrir el casino DIRECTO al loguear.

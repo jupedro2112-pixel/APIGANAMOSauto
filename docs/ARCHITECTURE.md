@@ -714,6 +714,8 @@ VIPCARGAS con su JWT, y el cliente nunca más necesita conocer su clave del casi
   pruebas (#293): `POST /api/admin/roulette/reset-user` `{userId|username, welcome,
   daily}` (solo admin general) → bienvenida a `'none'` + borra el giro de HOY de la
   diaria; emite `rewards_changed` al cliente. No devuelve lo ya acreditado.
+- **Link de acceso propio (#352):** `POST /api/auth/access-link/self` — el cliente logueado
+  pide un `?acceso=` de su propia cuenta (iPhone dentro de IG/FB, ver §landing).
 - **Link de landing con otra sesión en el celular (#309/#309b/#312):** la PWA pregunta
   con cuál seguir; "seguir con la vieja" → `POST /api/auth/access-link/discard` desactiva
   la cuenta nueva (`duplicateOfUserId`, tag `duplicado-landing`; vieja tag
@@ -1267,9 +1269,13 @@ El backfill de `usernameLower` corre en CADA arranque (idempotente) y setea
   `/CODIGO` sirva `index.html` (link limpio de pauta, #345); el sitio/backend lo elige
   `HOST_TO_SITE` de `landing/index.html` por dominio (`autogiroxcomp.com` → rapidogirox).
 - **Landing dentro del navegador de Instagram/Facebook/TikTok** (`escapeInAppBrowser`,
-  #260 → #351): iPhone = overlay ANTES del registro con instrucciones ⋯ → "Abrir en
-  navegador externo" (sin salto programático). Android = SIN overlay: se registra adentro
-  y, con la cuenta creada, salta a Chrome por `intent://` con el link de acceso
-  (`accessUrl#lc=…`, autologin; fallback = mismo link en el webview). El diálogo de IG
-  "¿Querés continuar?" aparece recién ahí, una vez. `window.__iab.intentFor(url)`.
+  #260 → #351/#352): ya NO hay overlay en ningún sistema — se registra adentro del webview
+  y la salida al navegador real es después, con la cuenta creada. Android: salta a Chrome
+  por `intent://` con el link de acceso (`accessUrl#lc=…`, autologin; fallback = mismo link
+  en el webview; `window.__iab.intentFor(url)`); el diálogo de IG "¿Querés continuar?"
+  aparece recién ahí, una vez. iPhone (sin salto programático): entra a la PWA en el
+  webview y `VIP.ui._iosInAppNudge()` pide `POST /api/auth/access-link/self` (rol user,
+  1/min, single use, `&mio=1`), lo deja en la URL con `history.replaceState` y muestra el
+  banner "⋯ → Abrir en navegador externo" → Safari abre esa URL ya logueado. `mio=1` con
+  sesión viva en el mismo webview = recarga → `tryAccessLink` lo ignora.
 - **Env DB_PASSWORD ya no se usa** (sección Base de Datos eliminada 2026-07-09).

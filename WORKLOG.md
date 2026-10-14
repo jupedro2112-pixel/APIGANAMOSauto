@@ -8,6 +8,35 @@
 
 ## Sesión 2026-10-14
 
+### 352. iPhone dentro de Instagram/Facebook: también se registra ADENTRO; la PWA deja un link de acceso propio en la URL + aviso "⋯ → Abrir en navegador externo" (Safari entra logueado)
+- **Pedido:** PulWin mandó captura del overlay de iPhone ("Abrí la página en tu navegador")
+  — "no le deja hacer nada y genera fricciones; podrían aplicar un INT luego de que se
+  registre y llevarlo al buscador externo ya logueado". En iOS no hay intent ni salto
+  programático (x-safari- bloqueado): lo ÚNICO que anda es el menú ⋯ de la app, que abre en
+  Safari **la URL actual**. Si se registrara adentro y tocara ⋯ sobre la landing, Safari
+  abriría la landing sin memoria del webview → segunda cuenta. Solución: que la URL actual
+  sea un link de acceso.
+- **Landing (`landing/index.html`):** `escapeInAppBrowser` ya no tapa nada en ningún sistema;
+  queda solo como detector + `window.__iab.intentFor` (Android, #351). iPhone: registro
+  adentro → `window.location.href = accessUrl#lc=…` → PWA en el webview (recuadro de
+  usuario/clave → ENTRAR → casino).
+- **Back:** `POST /api/auth/access-link/self` (authLimiter + auth, solo rol `user`, 1 por
+  minuto por usuario): `issueAccessLinkFor(userId)` + `&mio=1`. Single use como el del agente
+  (pisa el anterior; `accessLinkCreatedAt` ya lo tenían las cuentas de landing, no cambia la
+  heurística de `_agentCreated`).
+- **PWA:** `VIP.ui._iosInAppNudge()` (ui.js) al abrir el casino (`_showCasinoFrame`): si el UA
+  es iPhone/iPad + Instagram/FBAN/FBAV/TikTok y hay sesión → pide el link propio y hace
+  `history.replaceState(null, '', url)` (la barra de direcciones del webview pasa a ser el
+  link de acceso; es lo que ⋯ abre en Safari) + banner chico arriba del casino "📲 Guardá tu
+  cuenta en el celular — tocá ⋯ → Abrir en navegador externo. Safari abre con tu cuenta ya
+  ingresada" con ✕ (sessionStorage `iosNudgeDone`, una vez por sesión del navegador).
+  `tryAccessLink` (auth.js): `?acceso=…&mio=1` con `userToken` ya guardado = recarga del
+  mismo webview → se ignora y limpia la URL (sin el cartel #309 "ya tenés una cuenta").
+- `auth.js?v=352`, `ui.js?v=352`, SW v204. **Back necesita redeploy** (endpoint nuevo) y la
+  landing redeploy en Vercel. PROBAR en iPhone desde un chat de IG: landing limpia → nombre →
+  PWA con usuario/clave → ENTRAR → casino con el banner → ⋯ → "Abrir en navegador externo" →
+  Safari abre rapidogirox.com ya logueado (sin cartel de cuenta duplicada).
+
 ### 351. Landing en Android dentro de Instagram/Facebook: registro ADENTRO y salto a Chrome recién al entrar (pedido de PulWin)
 - **Qué pasaba:** desde #260 la landing, al detectar el navegador embebido de IG/FB/TikTok,
   mostraba el overlay "Abrí la página en tu navegador" ANTES del registro y en Android
