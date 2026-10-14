@@ -284,13 +284,31 @@
   // instrucciones del menú ⋯. SIEMPRE se preserva la URL completa (código de
   // campaña + fbclid) para no perder la atribución. "Seguir acá" queda como
   // salida chica para no perder la conversión si el escape falla.
+  // #351 (publicista PulWin, 2026-10-14): en ANDROID el salto a Chrome YA NO es
+  // al cargar la landing. El intent:// hacía que Instagram mostrara "Estás
+  // saliendo de nuestra app ¿Querés continuar?" antes de que el visitante viera
+  // nada, y mucha gente se quedaba ahí. Ahora el registro se completa ADENTRO del
+  // navegador de IG (sin fricción) y el salto a Chrome con intent:// es recién
+  // al ENTRAR, con el link de acceso (autologin) — el usuario ya está creado y la
+  // cuenta queda guardada en Chrome. iPhone sigue igual (overlay antes del
+  // registro: ahí no hay salto programático, y registrar adentro y abrir Safari
+  // después duplicaría la cuenta porque Safari no ve el localStorage del webview).
+  window.__iab = { inApp: false, android: false, intentFor: null };
   (function escapeInAppBrowser() {
     var ua = navigator.userAgent || '';
     if (!/Instagram|FBAN|FBAV|FB_IAB|FBAG|TikTok|musical_ly|Bytedance/i.test(ua)) return;
     var isAndroid = /Android/i.test(ua);
     var full = location.href;
     var tail = location.host + location.pathname + location.search;
-    var intentUrl = 'intent://' + tail + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(full) + ';end';
+    // intent:// a Chrome con la URL dada (https). El fragmento (#lc=…) se
+    // conserva: Android toma como dato todo lo anterior al ÚLTIMO '#'.
+    var intentFor = function (url) {
+      var u = String(url || '').replace(/^https?:\/\//, '');
+      return 'intent://' + u + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
+    };
+    window.__iab = { inApp: true, android: isAndroid, intentFor: intentFor };
+    if (isAndroid) return; // #351: se registra acá adentro; el salto es al entrar
+    var intentUrl = intentFor(full);
     var safariUrl = 'x-safari-https://' + tail;
     function mount() {
       if (document.getElementById('iabEscape')) return;
@@ -481,6 +499,7 @@
           }
         } catch (e) {}
         ctaLabel.textContent = 'Entrando';
+        if (window.__iab && __iab.android && __iab.intentFor) { enterViaChrome(dest, res.d); return; }
         window.location.href = dest;
       } else {
         cta.disabled = false; sp.remove(); ctaLabel.textContent = 'CREAR MI CUENTA';
@@ -493,6 +512,31 @@
       msg.className = 'msg err'; msg.textContent = 'Sin conexión. Probá de nuevo.';
     });
   });
+
+  // #351: Android dentro de Instagram/Facebook/TikTok — la cuenta YA está creada.
+  // Se muestra usuario+clave (por si el salto falla no los pierde) y se salta a
+  // Chrome con el link de acceso (autologin): intento automático + botón grande.
+  // IG pregunta "¿Querés continuar?" UNA vez, ya con el usuario comprometido.
+  // "Entrar acá" = seguir en el navegador de IG con el mismo link (salida chica).
+  function enterViaChrome(dest, d) {
+    var intentUrl = __iab.intentFor(dest);
+    try { scForm.style.display = 'none'; } catch (e) {}
+    try {
+      document.getElementById('outUser').textContent = (d && d.username) || '—';
+      document.getElementById('outPass').textContent = (d && d.password) || '—';
+    } catch (e) {}
+    scDone.classList.add('on');
+    enterBtn.textContent = '🚀 ENTRAR CON CHROME →';
+    enterBtn.onclick = function () { try { location.href = intentUrl; } catch (e) {} };
+    var stay = document.createElement('button');
+    stay.type = 'button';
+    stay.textContent = 'Entrar acá de todos modos';
+    stay.style.cssText = 'margin-top:14px;background:none;border:none;color:#7c8781;font-size:12px;text-decoration:underline;cursor:pointer;';
+    stay.onclick = function () { window.location.href = dest; };
+    enterBtn.parentNode.appendChild(stay);
+    try { window.scrollTo(0, 0); } catch (e) {}
+    setTimeout(function () { try { location.href = intentUrl; } catch (e) {} }, 400);
+  }
 
   // Popup de enganche: al intento de salida (desktop) o a los 12s (mobile), una sola vez.
   var pop = document.getElementById('pop');
@@ -544,6 +588,8 @@
     document.getElementById('reenterBtn').onclick = function () {
       // A la PWA (misma página del casino): si la sesión sigue viva entra
       // directo; si no, ahí inicia sesión con su usuario/clave. NO re-registra.
+      // #351: en Android dentro de IG/FB se abre en Chrome (ahí vive la sesión).
+      if (window.__iab && __iab.android && __iab.intentFor) { try { location.href = __iab.intentFor(API_BASE + '/'); return; } catch (e) {} }
       window.location.href = API_BASE;
     };
     // Sin "crear otra cuenta" (owner 2026-08-22): contradecía el dedup pedido

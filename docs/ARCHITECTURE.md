@@ -1266,4 +1266,10 @@ El backfill de `usernameLower` corre en CADA arranque (idempotente) y setea
   `landing/vercel.json` SÍ se usa: es el rewrite de la landing estática en Vercel para que
   `/CODIGO` sirva `index.html` (link limpio de pauta, #345); el sitio/backend lo elige
   `HOST_TO_SITE` de `landing/index.html` por dominio (`autogiroxcomp.com` → rapidogirox).
+- **Landing dentro del navegador de Instagram/Facebook/TikTok** (`escapeInAppBrowser`,
+  #260 → #351): iPhone = overlay ANTES del registro con instrucciones ⋯ → "Abrir en
+  navegador externo" (sin salto programático). Android = SIN overlay: se registra adentro
+  y, con la cuenta creada, salta a Chrome por `intent://` con el link de acceso
+  (`accessUrl#lc=…`, autologin; fallback = mismo link en el webview). El diálogo de IG
+  "¿Querés continuar?" aparece recién ahí, una vez. `window.__iab.intentFor(url)`.
 - **Env DB_PASSWORD ya no se usa** (sección Base de Datos eliminada 2026-07-09).

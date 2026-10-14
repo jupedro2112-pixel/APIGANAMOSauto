@@ -4,7 +4,36 @@
 > commit por commit está en `git log --oneline`. Esto captura decisiones, umbrales de
 > negocio y pendientes que NO se ven leyendo el código.
 >
-> **Última actualización: 2026-10-13**
+> **Última actualización: 2026-10-14**
+
+## Sesión 2026-10-14
+
+### 351. Landing en Android dentro de Instagram/Facebook: registro ADENTRO y salto a Chrome recién al entrar (pedido de PulWin)
+- **Qué pasaba:** desde #260 la landing, al detectar el navegador embebido de IG/FB/TikTok,
+  mostraba el overlay "Abrí la página en tu navegador" ANTES del registro y en Android
+  disparaba solo el `intent://` a Chrome a los 350 ms. Instagram responde a ese intent con
+  el diálogo "Estás saliendo de nuestra app ¿Querés continuar?" — el visitante lo veía antes
+  de ver nada de la landing (video de PulWin: aparece 3 veces) y mucha gente no avanzaba.
+  Martín (PulWin): "lo ideal es que cumplan el flujo del registro desde el inbrowser, y antes
+  de hacerles el autologin lo derivás con el intent".
+- **Ahora (Android in-app):** no hay overlay ni intent al cargar; el visitante escribe su
+  nombre y crea la cuenta adentro de IG. Con la cuenta creada, la landing muestra la sección
+  "¡Listo! Tu cuenta está creada" con usuario + clave (por si el salto falla no los pierde) y
+  salta a Chrome con `intent://` apuntando al **link de acceso** (`accessUrl` + `#lc=…`,
+  autologin): intento automático a los 400 ms + botón "🚀 ENTRAR CON CHROME →". IG pregunta
+  "¿Querés continuar?" UNA vez y ya con la cuenta hecha. "Entrar acá de todos modos" sigue
+  con el mismo link dentro del navegador de IG (salida chica). El fragmento `#lc=` se
+  conserva en el intent (Android toma como dato todo lo anterior al ÚLTIMO `#`);
+  `S.browser_fallback_url` = el mismo link por si no hay Chrome.
+- "Ya tenés tu cuenta → ENTRAR A MI CUENTA" (dedup por dispositivo) en Android in-app también
+  abre la PWA en Chrome por intent (ahí vive la sesión).
+- **iPhone queda igual** (overlay con instrucciones ⋯ → "Abrir en navegador externo" antes
+  del registro): no hay salto programático confiable, y registrar adentro y abrir Safari
+  después crearía una segunda cuenta (Safari no ve el localStorage del webview de IG).
+- Helper global `window.__iab = { inApp, android, intentFor(url) }` en `landing/index.html`.
+- Solo landing (Vercel): **redeploy de la landing**, no del back. PROBAR desde un chat de IG
+  en Android: landing sin diálogo → nombre → "¡Listo!" → diálogo de IG una vez → Chrome abre
+  la PWA ya logueado con el recuadro de usuario/clave.
 
 ## Sesión 2026-10-13
 
