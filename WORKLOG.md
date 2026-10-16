@@ -4,7 +4,26 @@
 > commit por commit está en `git log --oneline`. Esto captura decisiones, umbrales de
 > negocio y pendientes que NO se ven leyendo el código.
 >
-> **Última actualización: 2026-10-15**
+> **Última actualización: 2026-10-16**
+
+## Sesión 2026-10-16
+
+### 355. Filtro geográfico en landing: solo Argentina visible, otros países ven página en blanco
+- **Dueño:** mejorar trackeo bloqueando bots de otros países. Solo Argentina (AR) ve la landing normal; otros países reciben página HTML en blanco (status 200 vacío).
+- **Implementación:**
+  - Instalar `geoip-lite` (librería offline de geolocalización por IP, sin llamadas HTTP).
+  - Middleware `/landing/` que detecta IP del cliente (considerando X-Forwarded-For si está detrás de proxy).
+  - Si `country !== 'AR'` → devolver HTML vacío; si es AR → `next()` permite acceso.
+  - Servir carpeta `/landing` con `express.static` solo DESPUÉS del middleware (control de acceso en dos capas).
+  - Validar en dev (ej: VPN AR), probar en prod (verificar que bots no-AR reciban la página en blanco).
+- **Archivos:** `server.js` (require geoip + middleware + express.static /landing/).
+- **Package.json:** agregado `geoip-lite`.
+- `node --check` OK. **Requiere redeploy.**
+
+### 354. Cambio de título en landing: "1GIROX - Divertite"
+- **Dueño:** cambiar el título de la página de landing de "1GIROX — Entrá a jugar" a "1GIROX - Divertite".
+- **Archivo:** `/landing/index.html`, línea 6.
+- **Cambio:** actualización de contenido, sin impacto en lógica.
 
 ## Sesión 2026-10-15
 
